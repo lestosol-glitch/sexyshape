@@ -604,26 +604,31 @@ export default function App() {
   const [view, setView] = useState("treino");
   const [progressExercise, setProgressExercise] = useState("");
   const [progressHistory, setProgressHistory] = useState([]);
-  const [darkMode, setDarkMode] = useState(true);
 
-  const t = darkMode ? {
-    bg: "#0a0a0a", headerBg: "#0a0a0a", cardBg: "#131313", cardBgAlt: "#111",
-    border: "#1e1e1e", borderAlt: "#1a1a1a", text: "#f0ece4", textMuted: "#666",
-    textFaint: "#444", inputBg: "#0d0d0d", inputBorder: "#222",
-    tagBg: "#1e1e1e", tagOrangeBg: "#1a0e08", btnInactive: "#161616",
-    btnInactiveText: "#444", btnInactiveBorder: "#222", modalBg: "#111",
-    modalCardBg: "#161616", selectBg: "#131313", histBtnBg: "transparent",
-  } : {
-    bg: "#f5f5f0", headerBg: "#ffffff", cardBg: "#ffffff", cardBgAlt: "#f0f0eb",
-    border: "#e0e0d8", borderAlt: "#e8e8e0", text: "#111111", textMuted: "#555",
-    textFaint: "#999", inputBg: "#f8f8f4", inputBorder: "#d0d0c8",
-    tagBg: "#ebebе5", tagOrangeBg: "#fff3ee", btnInactive: "#ececе8",
-    btnInactiveText: "#888", btnInactiveBorder: "#d8d8d0", modalBg: "#ffffff",
-    modalCardBg: "#f5f5f0", selectBg: "#ffffff", histBtnBg: "#f0f0eb",
+  const t = {
+    bg: "#f4f4f0", headerBg: "#ffffff", cardBg: "#ffffff", cardBgAlt: "#eeeee9",
+    border: "#deddd8", borderAlt: "#e6e6e0", text: "#111111", textMuted: "#444444",
+    textFaint: "#888888", inputBg: "#f9f9f6", inputBorder: "#c8c8c0",
+    tagBg: "#e6e6e0", tagOrangeBg: "#fff0e8", btnInactive: "#e6e6e0",
+    btnInactiveText: "#555555", btnInactiveBorder: "#d2d2ca", modalBg: "#ffffff",
+    modalCardBg: "#f4f4f0", selectBg: "#ffffff", histBtnBg: "#f0f0ea",
   };
 
   const weekData = WORKOUT_DATA[activeWeek];
   const exercises = weekData?.days[activeDay] || [];
+
+  function isWeekCompleted(weekNum) {
+    return DAYS.every(day => {
+      const dayExs = WORKOUT_DATA[weekNum]?.days[day] || [];
+      return dayExs.some((ex, idx) => {
+        if (ex.name === "Sprint") return true;
+        return loadFromStorage(getStorageKey(weekNum, day, idx, "carga")) !== "";
+      });
+    });
+  }
+
+  const completedWeeks = [1,2,3,4,5,6,7,8].filter(w => isWeekCompleted(w));
+  const activeWeeks = [1,2,3,4,5,6,7,8].filter(w => !isWeekCompleted(w));
 
   function handleInput(idx, field, value) {
     const key = getStorageKey(activeWeek, activeDay, idx, field);
@@ -639,9 +644,8 @@ export default function App() {
 
   function handleSave(idx, exercise) {
     const carga = getInput(idx, "carga");
-    const reps = getInput(idx, "reps");
-    if (carga || reps) {
-      saveHistory(exercise.name, activeWeek, activeDay, carga, reps);
+    if (carga) {
+      saveHistory(exercise.name, activeWeek, activeDay, carga, "");
       setSavedFlash(idx);
       setTimeout(() => setSavedFlash(null), 1500);
     }
@@ -676,108 +680,108 @@ export default function App() {
     )
   )].sort();
 
+  const NavBtn = ({ label, targetView, onClick }) => (
+    <button
+      onClick={onClick || (() => setView(targetView))}
+      style={{
+        background: view === targetView ? "#e8612a" : t.btnInactive,
+        color: view === targetView ? "#fff" : t.btnInactiveText,
+        border: "none", borderRadius: 8, padding: "8px 11px",
+        fontSize: 11, fontWeight: 700, cursor: "pointer",
+        fontFamily: "inherit", letterSpacing: 0.5, whiteSpace: "nowrap",
+      }}>{label}</button>
+  );
+
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: t.bg,
-      fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
-      color: t.text,
-      transition: "background 0.25s, color 0.25s",
-    }}>
+    <div style={{ minHeight: "100vh", background: t.bg, fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", color: t.text }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-track { background: #e8e8e2; }
         ::-webkit-scrollbar-thumb { background: #e8612a; border-radius: 2px; }
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
         input { -webkit-appearance: none; }
       `}</style>
 
-      {/* Header */}
+      {/* ── HEADER ── */}
       <div style={{
-        background: darkMode ? "linear-gradient(135deg, #0a0a0a 0%, #1a0e08 100%)" : t.headerBg,
-        borderBottom: `1px solid ${t.border}`,
-        padding: "20px 16px 0",
-        position: "sticky", top: 0, zIndex: 100,
-        transition: "background 0.25s",
+        background: t.headerBg, borderBottom: `1px solid ${t.border}`,
+        padding: "16px 16px 0", position: "sticky", top: 0, zIndex: 100,
+        boxShadow: "0 1px 6px rgba(0,0,0,0.07)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: 28, letterSpacing: 2, color: "#e8612a", lineHeight: 1 }}>SEXY SHAPE</div>
-            <div style={{ fontSize: 11, color: t.textFaint, letterSpacing: 3, textTransform: "uppercase" }}>Macro Ciclo 1</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: 26, letterSpacing: 2, color: "#e8612a", lineHeight: 1 }}>SEXY SHAPE</div>
+            <div style={{ fontSize: 10, color: t.textFaint, letterSpacing: 3, textTransform: "uppercase" }}>Macro Ciclo 1</div>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button
-              onClick={() => setDarkMode(d => !d)}
-              style={{
-                background: t.btnInactive, border: `1px solid ${t.btnInactiveBorder}`,
-                color: t.textMuted, borderRadius: 8, padding: "8px 10px",
-                fontSize: 15, cursor: "pointer", lineHeight: 1,
-              }}>{darkMode ? "☀️" : "🌙"}</button>
-            <button
-              onClick={() => setView("treino")}
-              style={{
-                background: view === "treino" ? "#e8612a" : t.btnInactive,
-                color: view === "treino" ? "#fff" : t.btnInactiveText,
-                border: "none", borderRadius: 8, padding: "8px 14px",
-                fontSize: 12, fontWeight: 600, cursor: "pointer",
-                fontFamily: "inherit", letterSpacing: 1,
-              }}>TREINO</button>
-            <button
-              onClick={openProgress}
-              style={{
-                background: view === "progresso" ? "#e8612a" : t.btnInactive,
-                color: view === "progresso" ? "#fff" : t.btnInactiveText,
-                border: "none", borderRadius: 8, padding: "8px 14px",
-                fontSize: 12, fontWeight: 600, cursor: "pointer",
-                fontFamily: "inherit", letterSpacing: 1,
-              }}>EVOLUÇÃO</button>
+          <div style={{ display: "flex", gap: 6 }}>
+            <NavBtn label="TREINO" targetView="treino" />
+            <NavBtn label="CONCLUÍDAS" targetView="concluidas" />
+            <NavBtn label="EVOLUÇÃO" targetView="progresso" onClick={openProgress} />
           </div>
         </div>
 
         {view === "treino" && (
           <>
-            {/* Week selector */}
-            <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 12, scrollbarWidth: "none" }}>
-              {[1,2,3,4,5,6,7,8].map(w => (
-                <button key={w} onClick={() => setActiveWeek(w)} style={{
-                  flexShrink: 0,
-                  background: activeWeek === w ? "#e8612a" : t.btnInactive,
-                  color: activeWeek === w ? "#fff" : t.btnInactiveText,
-                  border: activeWeek === w ? "none" : `1px solid ${t.btnInactiveBorder}`,
-                  borderRadius: 8, padding: "6px 14px",
-                  fontSize: 13, fontWeight: 600, cursor: "pointer",
-                  fontFamily: "inherit", transition: "all 0.15s",
-                }}>S{w}</button>
-              ))}
+            {/* Week pills — only active weeks */}
+            <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 10, scrollbarWidth: "none" }}>
+              {activeWeeks.length === 0
+                ? <div style={{ fontSize: 13, color: t.textFaint, padding: "6px 0" }}>🎉 Todas as semanas concluídas!</div>
+                : activeWeeks.map(w => (
+                  <button key={w} onClick={() => setActiveWeek(w)} style={{
+                    flexShrink: 0,
+                    background: activeWeek === w ? "#e8612a" : t.btnInactive,
+                    color: activeWeek === w ? "#fff" : t.btnInactiveText,
+                    border: activeWeek === w ? "none" : `1px solid ${t.btnInactiveBorder}`,
+                    borderRadius: 8, padding: "6px 14px",
+                    fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    fontFamily: "inherit", transition: "all 0.15s",
+                  }}>S{w}</button>
+                ))
+              }
             </div>
 
-            {/* Day selector */}
-            <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 14, scrollbarWidth: "none" }}>
-              {DAYS.map(d => (
-                <button key={d} onClick={() => setActiveDay(d)} style={{
-                  flexShrink: 0,
-                  background: activeDay === d ? (darkMode ? "#fff" : "#111") : "transparent",
-                  color: activeDay === d ? (darkMode ? "#0a0a0a" : "#fff") : t.textFaint,
-                  border: activeDay === d ? "none" : `1px solid ${t.btnInactiveBorder}`,
-                  borderRadius: 8, padding: "5px 12px",
-                  fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  fontFamily: "inherit", transition: "all 0.15s",
-                }}>{d}</button>
-              ))}
+            {/* Day pills */}
+            <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 12, scrollbarWidth: "none" }}>
+              {DAYS.map(d => {
+                const isActive = activeDay === d;
+                const hasCarga = (WORKOUT_DATA[activeWeek]?.days[d] || []).some((ex, idx) =>
+                  ex.name !== "Sprint" && loadFromStorage(getStorageKey(activeWeek, d, idx, "carga")) !== ""
+                );
+                return (
+                  <button key={d} onClick={() => setActiveDay(d)} style={{
+                    flexShrink: 0, position: "relative",
+                    background: isActive ? "#111111" : t.btnInactive,
+                    color: isActive ? "#ffffff" : t.btnInactiveText,
+                    border: isActive ? "none" : `1px solid ${t.btnInactiveBorder}`,
+                    borderRadius: 8, padding: "5px 12px",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    fontFamily: "inherit", transition: "all 0.15s",
+                  }}>
+                    {d}
+                    {hasCarga && !isActive && (
+                      <span style={{
+                        position: "absolute", top: 3, right: 3,
+                        width: 5, height: 5, borderRadius: "50%", background: "#e8612a",
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </>
         )}
       </div>
 
-      {/* Main Content */}
+      {/* ── MAIN CONTENT ── */}
       <div style={{ padding: "16px", maxWidth: 600, margin: "0 auto" }}>
 
+        {/* TREINO */}
         {view === "treino" && (
           <>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: 36, letterSpacing: 2, color: t.text, lineHeight: 1 }}>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: 34, letterSpacing: 2, color: t.text, lineHeight: 1 }}>
                 {activeDay.toUpperCase()}
               </div>
               <div style={{ color: t.textFaint, fontSize: 12, marginTop: 2 }}>
@@ -788,61 +792,50 @@ export default function App() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {exercises.map((ex, idx) => {
                 const isSprint = ex.name === "Sprint";
+                const saved = getInput(idx, "carga");
                 return (
                   <div key={idx} style={{
                     background: isSprint ? t.cardBgAlt : t.cardBg,
                     border: `1px solid ${isSprint ? t.borderAlt : t.border}`,
-                    borderRadius: 12,
-                    padding: isSprint ? "12px 16px" : "14px 16px",
-                    position: "relative",
-                    overflow: "hidden",
-                    transition: "background 0.25s",
+                    borderRadius: 12, padding: isSprint ? "12px 16px" : "14px 16px",
+                    position: "relative", overflow: "hidden",
+                    boxShadow: isSprint ? "none" : "0 1px 4px rgba(0,0,0,0.05)",
                   }}>
-                    {!isSprint && (
-                      <div style={{
-                        position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
-                        background: "#e8612a", borderRadius: "3px 0 0 3px",
-                      }} />
-                    )}
+                    {!isSprint && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: "#e8612a", borderRadius: "3px 0 0 3px" }} />}
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: isSprint ? 0 : 12 }}>
-                      <div style={{ flex: 1, paddingLeft: isSprint ? 0 : 4 }}>
-                        <div style={{ fontWeight: 600, fontSize: 14, color: isSprint ? t.textFaint : t.text, letterSpacing: 0.3 }}>
+                      <div style={{ flex: 1, paddingLeft: isSprint ? 0 : 6 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: isSprint ? t.textFaint : t.text }}>
                           {ex.name}
                         </div>
-                        <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                          <span style={{
-                            background: t.tagBg, color: t.textMuted,
-                            fontSize: 11, padding: "2px 8px", borderRadius: 4,
-                            fontWeight: 600,
-                          }}>{ex.series} séries</span>
+                        <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                          <span style={{ background: t.tagBg, color: t.textMuted, fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600 }}>
+                            {ex.series} séries
+                          </span>
                           {ex.tecnica && (
-                            <span style={{
-                              background: t.tagOrangeBg, color: "#e8612a",
-                              fontSize: 11, padding: "2px 8px", borderRadius: 4,
-                              fontWeight: 500,
-                            }}>{ex.tecnica}</span>
+                            <span style={{ background: t.tagOrangeBg, color: "#c94e1e", fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 500 }}>
+                              {ex.tecnica}
+                            </span>
                           )}
                         </div>
                       </div>
                       {!isSprint && (
-                        <button
-                          onClick={() => openHistory(ex)}
-                          style={{
-                            background: t.histBtnBg, border: `1px solid ${t.inputBorder}`,
-                            color: t.textFaint, borderRadius: 6, padding: "4px 8px",
-                            fontSize: 11, cursor: "pointer", fontFamily: "inherit",
-                            flexShrink: 0, marginLeft: 8,
-                          }}>📊 hist.</button>
+                        <button onClick={() => openHistory(ex)} style={{
+                          background: t.histBtnBg, border: `1px solid ${t.inputBorder}`,
+                          color: t.textFaint, borderRadius: 6, padding: "4px 8px",
+                          fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0, marginLeft: 8,
+                        }}>📊 hist.</button>
                       )}
                     </div>
 
                     {!isSprint && (
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", paddingLeft: 4 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "flex-end", paddingLeft: 6 }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 10, color: t.textFaint, marginBottom: 4, letterSpacing: 1, textTransform: "uppercase" }}>Carga (kg)</div>
                           <input
                             type="number"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             placeholder="0"
                             value={getInput(idx, "carga")}
                             onChange={e => handleInput(idx, "carga", e.target.value)}
@@ -850,22 +843,16 @@ export default function App() {
                               width: "100%", background: t.inputBg,
                               border: `1px solid ${t.inputBorder}`, borderRadius: 8,
                               color: t.text, padding: "10px 12px",
-                              fontSize: 20, fontWeight: 700, outline: "none",
-                              fontFamily: "inherit",
+                              fontSize: 22, fontWeight: 700, outline: "none", fontFamily: "inherit",
                             }}
                           />
                         </div>
-                        <button
-                          onClick={() => handleSave(idx, ex)}
-                          style={{
-                            marginTop: 18,
-                            background: savedFlash === idx ? "#2a7a2a" : "#e8612a",
-                            border: "none", borderRadius: 8,
-                            color: "#fff", padding: "10px 14px",
-                            fontSize: 18, cursor: "pointer",
-                            transition: "background 0.3s",
-                            flexShrink: 0,
-                          }}>
+                        <button onClick={() => handleSave(idx, ex)} style={{
+                          background: savedFlash === idx ? "#2a7a2a" : "#e8612a",
+                          border: "none", borderRadius: 8, color: "#fff",
+                          padding: "11px 16px", fontSize: 18, cursor: "pointer",
+                          transition: "background 0.3s", flexShrink: 0,
+                        }}>
                           {savedFlash === idx ? "✓" : "💾"}
                         </button>
                       </div>
@@ -877,25 +864,93 @@ export default function App() {
           </>
         )}
 
+        {/* CONCLUÍDAS */}
+        {view === "concluidas" && (
+          <div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: 34, letterSpacing: 2, marginBottom: 4, color: t.text }}>SEMANAS CONCLUÍDAS</div>
+            <div style={{ fontSize: 12, color: t.textFaint, marginBottom: 20 }}>{completedWeeks.length} de 8 semanas finalizadas</div>
+
+            {completedWeeks.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "50px 0", color: t.textFaint }}>
+                <div style={{ fontSize: 44, marginBottom: 10 }}>🏋️</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: t.textMuted }}>Nenhuma semana concluída ainda.</div>
+                <div style={{ fontSize: 13, marginTop: 6 }}>Complete Segunda a Sábado para aparecer aqui!</div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {completedWeeks.map(w => (
+                  <div key={w} style={{
+                    background: t.cardBg, border: `1px solid ${t.border}`,
+                    borderRadius: 14, padding: "16px 18px",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{
+                        width: 46, height: 46, borderRadius: 10, background: "#e8612a",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontFamily: "'Bebas Neue'", fontSize: 20, color: "#fff", letterSpacing: 1,
+                      }}>S{w}</div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>Semana {w}</div>
+                        <div style={{ fontSize: 12, color: t.textFaint, marginTop: 2 }}>
+                          {DAYS.length} dias · {Object.values(WORKOUT_DATA[w].days).reduce((a, d) => a + d.filter(e => e.name !== "Sprint").length, 0)} exercícios
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 24 }}>✅</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeWeeks.length > 0 && (
+              <div style={{ marginTop: 28 }}>
+                <div style={{ fontSize: 11, color: t.textFaint, letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Em andamento</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {activeWeeks.map(w => {
+                    const doneCount = DAYS.filter(d =>
+                      (WORKOUT_DATA[w]?.days[d] || []).some((ex, idx) =>
+                        ex.name !== "Sprint" && loadFromStorage(getStorageKey(w, d, idx, "carga")) !== ""
+                      )
+                    ).length;
+                    return (
+                      <div key={w} style={{
+                        background: t.cardBgAlt, border: `1px solid ${t.borderAlt}`,
+                        borderRadius: 12, padding: "12px 16px",
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{
+                            width: 38, height: 38, borderRadius: 8, background: t.tagBg,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontFamily: "'Bebas Neue'", fontSize: 17, color: t.textMuted,
+                          }}>S{w}</div>
+                          <div style={{ fontWeight: 600, fontSize: 14, color: t.textMuted }}>Semana {w}</div>
+                        </div>
+                        <div style={{ fontSize: 12, color: t.textFaint }}>{doneCount}/{DAYS.length} dias</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* EVOLUÇÃO */}
         {view === "progresso" && (
           <div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: 36, letterSpacing: 2, marginBottom: 16, color: t.text }}>EVOLUÇÃO DE CARGA</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: 34, letterSpacing: 2, marginBottom: 16, color: t.text }}>EVOLUÇÃO DE CARGA</div>
 
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: t.textFaint, marginBottom: 6, letterSpacing: 1, textTransform: "uppercase" }}>Exercício</div>
-              <select
-                value={progressExercise}
-                onChange={e => setProgressExercise(e.target.value)}
-                style={{
-                  width: "100%", background: t.selectBg, border: `1px solid ${t.border}`,
-                  borderRadius: 8, color: t.text, padding: "12px 14px",
-                  fontSize: 14, outline: "none", fontFamily: "inherit",
-                  appearance: "none",
-                }}
-              >
-                {allExerciseNames.map(name => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
+              <select value={progressExercise} onChange={e => setProgressExercise(e.target.value)} style={{
+                width: "100%", background: t.selectBg, border: `1px solid ${t.border}`,
+                borderRadius: 8, color: t.text, padding: "12px 14px",
+                fontSize: 14, outline: "none", fontFamily: "inherit", appearance: "none",
+              }}>
+                {allExerciseNames.map(name => <option key={name} value={name}>{name}</option>)}
               </select>
             </div>
 
@@ -903,26 +958,21 @@ export default function App() {
               <div style={{ textAlign: "center", padding: "40px 0", color: t.textFaint }}>
                 <div style={{ fontSize: 40, marginBottom: 8 }}>📊</div>
                 <div>Nenhum registro ainda para este exercício.</div>
-                <div style={{ fontSize: 12, marginTop: 4, color: t.textFaint }}>Salve um treino primeiro!</div>
+                <div style={{ fontSize: 12, marginTop: 4 }}>Salve um treino primeiro!</div>
               </div>
             ) : (
               <>
-                <div style={{ background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, color: t.textFaint, marginBottom: 12, letterSpacing: 1 }}>PROGRESSÃO DE CARGA (kg)</div>
+                <div style={{ background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+                  <div style={{ fontSize: 11, color: t.textFaint, marginBottom: 12, letterSpacing: 1, textTransform: "uppercase" }}>Progressão de carga (kg)</div>
                   <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 80 }}>
                     {progressHistory.filter(h => h.carga).map((h, i) => {
                       const maxCarga = Math.max(...progressHistory.filter(x => x.carga).map(x => parseFloat(x.carga) || 0));
-                      const pct = maxCarga > 0 ? ((parseFloat(h.carga) || 0) / maxCarga) : 0;
+                      const pct = maxCarga > 0 ? (parseFloat(h.carga) / maxCarga) : 0;
                       return (
                         <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                           <div style={{ fontSize: 9, color: "#e8612a", fontWeight: 700 }}>{h.carga}</div>
-                          <div style={{
-                            width: "100%", background: "#e8612a",
-                            height: `${Math.max(4, pct * 60)}px`,
-                            borderRadius: "3px 3px 0 0",
-                            opacity: 0.7 + pct * 0.3,
-                          }} />
-                          <div style={{ fontSize: 9, color: t.textFaint, textAlign: "center" }}>S{h.week}</div>
+                          <div style={{ width: "100%", background: "#e8612a", height: `${Math.max(4, pct * 60)}px`, borderRadius: "3px 3px 0 0", opacity: 0.6 + pct * 0.4 }} />
+                          <div style={{ fontSize: 9, color: t.textFaint }}>S{h.week}</div>
                         </div>
                       );
                     })}
@@ -935,19 +985,18 @@ export default function App() {
                       background: t.cardBg, border: `1px solid ${t.border}`,
                       borderRadius: 10, padding: "12px 16px",
                       display: "flex", justifyContent: "space-between", alignItems: "center",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                     }}>
                       <div>
                         <div style={{ fontSize: 12, color: t.textMuted }}>Semana {h.week} · {h.day}</div>
                         <div style={{ fontSize: 11, color: t.textFaint, marginTop: 2 }}>{h.date}</div>
                       </div>
-                      <div style={{ display: "flex", gap: 16, textAlign: "right" }}>
-                        {h.carga && (
-                          <div>
-                            <div style={{ fontSize: 20, fontWeight: 700, color: "#e8612a", lineHeight: 1 }}>{h.carga}</div>
-                            <div style={{ fontSize: 10, color: t.textFaint }}>kg</div>
-                          </div>
-                        )}
-                      </div>
+                      {h.carga && (
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 22, fontWeight: 700, color: "#e8612a", lineHeight: 1 }}>{h.carga}</div>
+                          <div style={{ fontSize: 10, color: t.textFaint }}>kg</div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -957,21 +1006,17 @@ export default function App() {
         )}
       </div>
 
-      {/* History Modal */}
+      {/* ── HISTORY MODAL ── */}
       {historyModal && (
-        <div
-          onClick={() => setHistoryModal(null)}
-          style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
-            zIndex: 200, display: "flex", alignItems: "flex-end",
+        <div onClick={() => setHistoryModal(null)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+          zIndex: 200, display: "flex", alignItems: "flex-end",
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: t.modalBg, borderRadius: "20px 20px 0 0",
+            padding: 20, width: "100%", maxHeight: "70vh", overflowY: "auto",
+            border: `1px solid ${t.border}`, boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
           }}>
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: t.modalBg, borderRadius: "20px 20px 0 0",
-              padding: 20, width: "100%", maxHeight: "70vh",
-              overflowY: "auto", border: `1px solid ${t.border}`,
-            }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div>
                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: 22, color: "#e8612a", letterSpacing: 1 }}>HISTÓRICO</div>
@@ -996,9 +1041,12 @@ export default function App() {
                       <div style={{ fontSize: 12, color: t.textMuted }}>Sem. {h.week} · {h.day}</div>
                       <div style={{ fontSize: 11, color: t.textFaint }}>{h.date}</div>
                     </div>
-                    <div style={{ display: "flex", gap: 14, textAlign: "right" }}>
-                      {h.carga && <div><span style={{ fontSize: 18, fontWeight: 700, color: "#e8612a" }}>{h.carga}</span><span style={{ fontSize: 10, color: t.textFaint }}> kg</span></div>}
-                    </div>
+                    {h.carga && (
+                      <div>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: "#e8612a" }}>{h.carga}</span>
+                        <span style={{ fontSize: 10, color: t.textFaint }}> kg</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
