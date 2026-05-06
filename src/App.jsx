@@ -617,18 +617,24 @@ export default function App() {
   const weekData = WORKOUT_DATA[activeWeek];
   const exercises = weekData?.days[activeDay] || [];
 
-  function isWeekCompleted(weekNum) {
-    return DAYS.every(day => {
-      const dayExs = WORKOUT_DATA[weekNum]?.days[day] || [];
-      return dayExs.some((ex, idx) => {
-        if (ex.name === "Sprint") return true;
-        return loadFromStorage(getStorageKey(weekNum, day, idx, "carga")) !== "";
-      });
+  const [completedWeeks, setCompletedWeeks] = useState(() => {
+    try {
+      const raw = localStorage.getItem("ss_completed_weeks");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+
+  function toggleWeekCompleted(weekNum) {
+    setCompletedWeeks(prev => {
+      const updated = prev.includes(weekNum)
+        ? prev.filter(w => w !== weekNum)
+        : [...prev, weekNum];
+      try { localStorage.setItem("ss_completed_weeks", JSON.stringify(updated)); } catch {}
+      return updated;
     });
   }
 
-  const completedWeeks = [1,2,3,4,5,6,7,8].filter(w => isWeekCompleted(w));
-  const activeWeeks = [1,2,3,4,5,6,7,8].filter(w => !isWeekCompleted(w));
+  const activeWeeks = [1,2,3,4,5,6,7,8].filter(w => !completedWeeks.includes(w));
 
   function handleInput(idx, field, value) {
     const key = getStorageKey(activeWeek, activeDay, idx, field);
@@ -898,7 +904,14 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-                    <div style={{ fontSize: 24 }}>✅</div>
+                    <button
+                    onClick={() => toggleWeekCompleted(w)}
+                    style={{
+                      background: "#e8612a", border: "none", borderRadius: 8,
+                      color: "#fff", padding: "8px 14px", fontSize: 12,
+                      fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                      whiteSpace: "nowrap",
+                    }}>✓ Desmarcar</button>
                   </div>
                 ))}
               </div>
@@ -908,30 +921,29 @@ export default function App() {
               <div style={{ marginTop: 28 }}>
                 <div style={{ fontSize: 11, color: t.textFaint, letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Em andamento</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {activeWeeks.map(w => {
-                    const doneCount = DAYS.filter(d =>
-                      (WORKOUT_DATA[w]?.days[d] || []).some((ex, idx) =>
-                        ex.name !== "Sprint" && loadFromStorage(getStorageKey(w, d, idx, "carga")) !== ""
-                      )
-                    ).length;
-                    return (
-                      <div key={w} style={{
-                        background: t.cardBgAlt, border: `1px solid ${t.borderAlt}`,
-                        borderRadius: 12, padding: "12px 16px",
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          <div style={{
-                            width: 38, height: 38, borderRadius: 8, background: t.tagBg,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontFamily: "'Bebas Neue'", fontSize: 17, color: t.textMuted,
-                          }}>S{w}</div>
-                          <div style={{ fontWeight: 600, fontSize: 14, color: t.textMuted }}>Semana {w}</div>
-                        </div>
-                        <div style={{ fontSize: 12, color: t.textFaint }}>{doneCount}/{DAYS.length} dias</div>
+                  {activeWeeks.map(w => (
+                    <div key={w} style={{
+                      background: t.cardBgAlt, border: `1px solid ${t.borderAlt}`,
+                      borderRadius: 12, padding: "12px 16px",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{
+                          width: 38, height: 38, borderRadius: 8, background: t.tagBg,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontFamily: "'Bebas Neue'", fontSize: 17, color: t.textMuted,
+                        }}>S{w}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: t.textMuted }}>Semana {w}</div>
                       </div>
-                    );
-                  })}
+                      <button
+                        onClick={() => toggleWeekCompleted(w)}
+                        style={{
+                          background: t.tagBg, border: `1px solid ${t.btnInactiveBorder}`,
+                          borderRadius: 8, color: t.textMuted, padding: "7px 12px",
+                          fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                        }}>Marcar ✓</button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
